@@ -40,7 +40,7 @@ public class IntoTravelTime extends BaseBean implements Action {
 			for(String date = startDate;dayDiff(date,endDate)>=0;date=addDate(date,1)){//根据日期循环	
 			String sql1 = "select (case when shiftid is null then '-1' else shiftid end ),(case when JBID is null then '-1' else JBID end )" +
 					" from hrqw_dutydata " +
-					" where pemn="+pemn+" and dutydate='"+date+"'";
+					" where pemn='"+pemn+"' and dutydate='"+date+"'";
 			ds1.executeSql(sql1);
 			basebean.writeLog("===========查询对应日期的班别和假别： "+sql1);
 			String shiftid = null;

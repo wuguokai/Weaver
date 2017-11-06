@@ -14,7 +14,7 @@ import weaver.general.BaseBean;
 import weaver.general.Util;
 import weaver.soa.workflow.request.RequestInfo;
 
-public class IntoLeaveTimeAction extends BaseBean implements Action {
+public class IntoLeaveTimeActionV8 extends BaseBean implements Action {
 
 	BaseBean basebean = new BaseBean();
 	
@@ -322,11 +322,11 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 								while(rs5.next()){
 									if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 										basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-										dutydateD="error";
+										dutydateD="";
 										break;
 									}
 								}
-								if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+								if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 									basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 									break;
 								}
@@ -352,11 +352,11 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 									while(rs5.next()){
 										if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 											basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-											dutydateD="error";
+											dutydateD="";
 											break;
 										}
 									}
-									if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+									if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 										basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 										break;
 									}
@@ -556,11 +556,11 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 								while(rs5.next()){
 									if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 										basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-										dutydateD="error";
+										dutydateD="";
 										break;
 									}
 								}
-								if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+								if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 									basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 									break;
 								}
@@ -586,11 +586,11 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 									while(rs5.next()){
 										if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 											basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-											dutydateD="error";
+											dutydateD="";
 											break;
 										}
 									}
-									if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+									if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 										basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 										break;
 									}
@@ -692,11 +692,11 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 									while(rs5.next()){
 										if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 											basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-											dutydateD="error";
+											dutydateD="";
 											break;
 										}
 									}
-									if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+									if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 										basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 										break;
 									}
@@ -722,11 +722,11 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 										while(rs5.next()){
 											if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 												basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-												dutydateD="error";
+												dutydateD="";
 												break;
 											}
 										}
-										if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+										if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 											basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 											break;
 										}
@@ -880,11 +880,11 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 											while(rs5.next()){
 												if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 													basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-													dutydateD="error";
+													dutydateD="";
 													break;
 												}
 											}
-											if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+											if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 												basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 												break;
 											}
@@ -910,11 +910,11 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 												while(rs5.next()){
 													if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 														basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-														dutydateD="error";
+														dutydateD="";
 														break;
 													}
 												}
-												if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+												if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 													basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 													break;
 												}

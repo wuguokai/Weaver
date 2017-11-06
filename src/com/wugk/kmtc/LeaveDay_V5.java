@@ -11,7 +11,7 @@ import net.sf.json.JSONObject;
 import weaver.conn.RecordSetDataSource;
 import weaver.general.BaseBean;
  
-public class LeaveDay {
+public class LeaveDay_V5 {
 	BaseBean basebean = new BaseBean();
 	//计算请假时间
 	public String diffDay(String pemn ,String startDate, String startTime, String endDate, String endTime){				
@@ -27,14 +27,14 @@ public class LeaveDay {
 		//班别
 		String sql1 = "select (case when shiftid is null then '-1' else shiftid end ) " +
 					" from hrqw_dutydata " +
-					" where pemn='"+pemn+"' and dutydate between '"+addDate(startDate,-1)+"' and '"+endDate+"'";
+					" where pemn="+pemn+" and dutydate between '"+addDate(startDate,-1)+"' and '"+endDate+"'";
 		
 		ds1.executeSql(sql1);		
 		basebean.writeLog("===================sql1："+ sql1);
 		//假别
 		String sql2 = "select (case when JBID is null then '-1' else JBID end ) " +
 				" from hrqw_dutydata " +
-				" where pemn='"+pemn+"' and dutydate between '"+addDate(startDate,-1)+"' and '"+endDate+"'";
+				" where pemn="+pemn+" and dutydate between '"+addDate(startDate,-1)+"' and '"+endDate+"'";
 		
 		ds2.executeSql(sql2);
 		basebean.writeLog("===================sql2："+ sql2);

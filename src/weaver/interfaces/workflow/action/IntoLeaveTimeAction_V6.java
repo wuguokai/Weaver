@@ -14,7 +14,7 @@ import weaver.general.BaseBean;
 import weaver.general.Util;
 import weaver.soa.workflow.request.RequestInfo;
 
-public class IntoLeaveTimeAction extends BaseBean implements Action {
+public class IntoLeaveTimeAction_V6 extends BaseBean implements Action {
 
 	BaseBean basebean = new BaseBean();
 	
@@ -29,7 +29,7 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 		
 		try {
 			basebean.writeLog("===================请假数据回写HR系统开始");
-			String sql1 = "select pemntext,leave_begn_date, leave_begn_time, leave_end_date,leave_end_time,classify,billno" +
+			String sql1 = "select pemntext,leave_begn_date, leave_begn_time, leave_end_date,leave_end_time,classify" +
 						" from formtable_main_23"+
 						" where requestid='"+requestId+"'";
 			rs1.executeSql(sql1);
@@ -50,7 +50,6 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 //			double pmsh = 0;	//剩余调休
 			double sjlasthours = 0;	//剩余事假
 			String JBIDs = null;
-			String billno="";
 			while(rs1.next()){
 				pemn = rs1.getString(1);
 				startDate = rs1.getString(2);
@@ -58,7 +57,6 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 				endDate = rs1.getString(4);
 				endTime = rs1.getString(5);
 				classify = rs1.getInt(6);
-				billno = rs1.getString(7);
 			}
 			 
 			JSONObject json = diffDay(pemn, startDate, startTime, endDate, endTime);
@@ -121,7 +119,7 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 				}		
 								
 				String sql2 = "select ondutydate,offdutydate,shiftid,JBID,lateflag,leaveflag " +
-						" from hrqw_dutydata where pemn='"+pemn+"' and dutydate = '"+date+"'";
+						" from hrqw_dutydata where pemn="+pemn+" and dutydate = '"+date+"'";
 				rs2.executeSql(sql2);
 				basebean.writeLog("===================sql2："+ sql2);
 				String ondutydate = null;
@@ -142,8 +140,7 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 					shiftid = rs2.getString(3);
 					JBID =rs2.getString(4);
 					lateflag = rs2.getString(5);
-					leaveflag = rs2.getString(6);	
-					basebean.writeLog("===================ondutydate : offdutydate  "+ ondutydate+" : "+offdutydate);
+					leaveflag = rs2.getString(6);					
 				}		
 				
 				String sql3 = "select starttime,endtime from HRQW_SHIFT where shiftid='"+shiftid+"'";
@@ -167,34 +164,35 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 					}			 
 					
 				//如果是R和T的假别,以及选择的是公假时，就不做操作
-				if(!JBID.equals("R") && !JBID.equals("T") && !JBIDs.equals("T") && !JBIDs.equals("W") && hours>0){
+				if(!JBID.equals("R") && !JBID.equals("T") && !JBIDs.equals("T") && !JBIDs.equals("W")){
 					//回写假别和请假小时数
-					sql = "update hrqw_dutydata set defitem5 ='"+billno+"', JBID='"+JBIDs+"', jbhours="+hours+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
+					sql = "update hrqw_dutydata set JBID='"+JBIDs+"', jbhours="+hours+" where pemn="+pemn+" and dutydate='"+date+"' ";
 					rs.executeSql(sql);
 					basebean.writeLog("===================回写假别和请假小时数sql: "+ sql);
 					if(dayDiff(date, sysDate)>=0){//1班别的去标识
 						//是否去标识和加标识
 						if(dayDiff(date,startDate)==0)
 						if(timeCompare(starttime,ondutydate)>0 && timeCompare(starttime,startTime)>0){//加迟到
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',lateflag='#' where pemn='"+pemn+"' and dutydate='"+date+"' ";
+							sql = "update hrqw_dutydata set lateflag='#' where pemn="+pemn+" and dutydate='"+date+"' ";
 							rs.executeSql(sql);
 							basebean.writeLog("===================加迟到sql: "+ sql);
 						}else if(timeCompare(starttime,ondutydate)<=0 || (timeCompare(starttime,startTime)<=0 && timeCompare(ondutydate,endTime)>=0)){//去迟到
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',lateflag=null where pemn='"+pemn+"' and dutydate='"+date+"' ";
+							sql = "update hrqw_dutydata set lateflag=null where pemn="+pemn+" and dutydate='"+date+"' ";
 							rs.executeSql(sql);
 							basebean.writeLog("===================去迟到sql: "+ sql);
 						}
 						if(dayDiff(date,endDate)==0)
 						if(timeCompare(endtime,offdutydate)<0 && timeCompare(endtime,endTime)<0){//加早退
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',leaveflag='#' where pemn='"+pemn+"' and dutydate='"+date+"' ";
+							sql = "update hrqw_dutydata set leaveflag='#' where pemn="+pemn+" and dutydate='"+date+"' ";
 							rs.executeSql(sql);
 							basebean.writeLog("===================加早退sql: "+ sql);
 						}else if(timeCompare(endtime,offdutydate)>=0 || (timeCompare(endtime,endTime)>=0 && timeCompare(offdutydate,startTime)<=0)){//去早退
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',leaveflag=null where pemn='"+pemn+"' and dutydate='"+date+"' ";
+							sql = "update hrqw_dutydata set leaveflag=null where pemn="+pemn+" and dutydate='"+date+"' ";
 							rs.executeSql(sql);
 							basebean.writeLog("===================去早退sql: "+ sql);
 						}
 					}
+					
 				}
 							
 			}else if(shiftid.equals("7")){
@@ -205,7 +203,7 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 					basebean.writeLog("=========请假时长为0:"+npe);
 					hours=0;
 				}
-				if(!JBID.equals("R") && !JBID.equals("T") && !JBIDs.equals("T") && !JBIDs.equals("W") && hours>0){
+				if(!JBID.equals("R") && !JBID.equals("T") && !JBIDs.equals("T") && !JBIDs.equals("W")){
 					
 				if(JBIDs.equals("change")){//免加班
 				
@@ -218,7 +216,7 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 							time1 = ondutydate;
 						}else{
 							time1 = startTime;
-						}	
+						}
 						if(!"".equals(offdutydate) && timeCompare(endTime, offdutydate)>0){
 							time2 = offdutydate;
 						}else{
@@ -245,189 +243,165 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 						dutyHours = 12;
 					}
 					if(dutyHours>=8){//需要去除标识
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',lateflag=null,leaveflag=null where pemn='"+pemn+"' and dutydate='"+date+"' ";
+						sql = "update hrqw_dutydata set lateflag=null,leaveflag=null where pemn="+pemn+" and dutydate='"+date+"' ";
 						rs.executeSql(sql);
 						basebean.writeLog("===================7班别去除标识sql: "+ sql);
 					}else{//需要加标识
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',lateflag='#',leaveflag='#' where pemn='"+pemn+"' and dutydate='"+date+"' ";
+						sql = "update hrqw_dutydata set lateflag='#',leaveflag='#' where pemn="+pemn+" and dutydate='"+date+"' ";
 						rs.executeSql(sql);
 						basebean.writeLog("===================7班别添加标识sql: "+ sql);
 					}
 					
-					
-				//TODO 请假当天是D的优先级最高
-				if(JBID.equals("D")){//请假当天是D
-					if(hours == 12){//请假一整天
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"', JBID='R' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						rs.executeSql(sql);
-						basebean.writeLog("===================7班请假当天是D改R的sql: "+ sql);
-					}else{//请假不是一整天
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='6',overtimehours=overtimehours+"+(12-hours)+",overtimeflag='X'  where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						rs.executeSql(sql);
-						basebean.writeLog("===================7班请假当天是D改成6班别加班的sql: "+ sql);
-					}
-				}else{//请假当天不是D
-					if(hours<4){
-						if(JBID.equals("Z")){
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null, shiftid='2',overtimehours=overtimehours+"+(4-hours)+",overtimeflag='X' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						}else{
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='2',overtimehours=overtimehours+"+(4-hours)+",overtimeflag='X' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						}
-						rs.executeSql(sql);
-						basebean.writeLog("===================7班别免加班sql: "+ sql);
-					}else if(hours == 4){
-						if(JBID.equals("Z")){
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null, shiftid='2' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						}else{
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='2' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						}
-						rs.executeSql(sql);
-						basebean.writeLog("===================7班别免加班sql: "+ sql);
+
+				if(hours<=4){	
+					if(JBID.equals("Z")){
+						sql = "update hrqw_dutydata set JBID=null, shiftid='2',overtimehours=overtimehours+"+(4-hours)+",overtimeflag='X' where pemn="+pemn+" and dutydate='"+date+"' ";
 					}else{
-						if(pysh+4-hours>=0){	//去年年假充足
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='2',JBID='S',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-							rs.executeSql(sql);
-							basebean.writeLog("===================7班别免加班去年年休sql: "+ sql);
-						}else if(pych+4-hours>=0){	//去年调休充足
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='2',JBID='C',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-							rs.executeSql(sql);
-							basebean.writeLog("===================7班别免加班去年调休sql: "+ sql);
-						}else if(pmsh+4-hours>=0){	//年休充足
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='2',JBID='S',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-							rs.executeSql(sql);
-							basebean.writeLog("===================7班别免加班年休sql: "+ sql);
-						}else if(pmch+4-hours>=0){	//调休充足
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='2',JBID='C',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-							rs.executeSql(sql);
-							basebean.writeLog("===================7班别免加班调休sql: "+ sql);
-						}else{	//去D处理
-							
-						RecordSetDataSource rsD = new RecordSetDataSource("HR");	
-						String sqlD = "select dutydate from hrqw_dutydata " +
-									" where pemn='"+pemn+"' and dutydate<'"+date+"' and JBID='D' and defitem2='N'" +
-									" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
-									" order by dutydate desc";
+						sql = "update hrqw_dutydata set shiftid='2',overtimehours=overtimehours+"+(4-hours)+",overtimeflag='X' where pemn="+pemn+" and dutydate='"+date+"' ";
+					}
+					rs.executeSql(sql);
+					basebean.writeLog("===================7班别免加班sql: "+ sql);
+				}else{
+					if(pysh+4-hours>=0){	//去年年假充足
+						sql = "update hrqw_dutydata set shiftid='2',JBID='S',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+						rs.executeSql(sql);
+						basebean.writeLog("===================7班别免加班去年年休sql: "+ sql);
+					}else if(pych+4-hours>=0){	//去年调休充足
+						sql = "update hrqw_dutydata set shiftid='2',JBID='C',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+						rs.executeSql(sql);
+						basebean.writeLog("===================7班别免加班去年调休sql: "+ sql);
+					}else if(pmsh+4-hours>=0){	//年休充足
+						sql = "update hrqw_dutydata set shiftid='2',JBID='S',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+						rs.executeSql(sql);
+						basebean.writeLog("===================7班别免加班年休sql: "+ sql);
+					}else if(pmch+4-hours>=0){	//调休充足
+						sql = "update hrqw_dutydata set shiftid='2',JBID='C',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+						rs.executeSql(sql);
+						basebean.writeLog("===================7班别免加班调休sql: "+ sql);
+					}else{	//去D处理
+						
+					RecordSetDataSource rsD = new RecordSetDataSource("HR");	
+					String sqlD = "select dutydate from hrqw_dutydata " +
+								" where pemn="+pemn+" and dutydate<'"+date+"' and JBID='D' and defitem2='N'" +
+								" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
+								" order by dutydate desc";
+					rsD.executeSql(sqlD);
+					basebean.writeLog("===================向前找D的sqlD: "+ sqlD);
+					String dutydateD = null;
+					if(rsD.getCounts()>0){//向前找D的结果集有值
+						basebean.writeLog("===================向前找D的结果集有值");
+//						rsD.previous();//移动到上一条记录，重头开始遍历
+						while(rsD.next()){
+							dutydateD = rsD.getString(1);
+							String sql5 = "select holidaydate from hrqw_fixholiday "
+										+ " where substr(holidaydate,0,4)>=to_char(add_months(trunc(sysdate),-12),'yyyy')";
+							rs5.executeSql(sql5);
+							basebean.writeLog("===================查询法定节假日的日期: "+ sql5);
+							while(rs5.next()){
+								if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
+									basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
+									dutydateD="";
+									break;
+								}
+							}
+							if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+								basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
+								break;
+							}
+						}
+						
+					}else{
+						sqlD = "select dutydate from hrqw_dutydata " +
+								" where pemn="+pemn+" and dutydate>'"+date+"' and JBID='D' and defitem2='N'" +
+								" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
+								" order by dutydate";
 						rsD.executeSql(sqlD);
-						basebean.writeLog("===================向前找D的sqlD: "+ sqlD);
-						String dutydateD = null;
-						if(rsD.getCounts()>0){//向前找D的结果集有值
-							basebean.writeLog("===================向前找D的结果集有值");
-//							rsD.previous();//移动到上一条记录，重头开始遍历
+						basebean.writeLog("===================向后找D的sqlD: "+ sqlD);
+						
+						if(rsD.getCounts()>0){//向后找D的结果集有值	
+							basebean.writeLog("===================向后找D的结果集有值");
+							//rsD.previous();//移动到上一条记录，重头开始遍历
 							while(rsD.next()){
 								dutydateD = rsD.getString(1);
 								String sql5 = "select holidaydate from hrqw_fixholiday "
-											+ " where substr(holidaydate,0,4)>=to_char(add_months(trunc(sysdate),-12),'yyyy')";
+										+ " where substr(holidaydate,0,4)>=to_char(add_months(trunc(sysdate),-12),'yyyy')";
 								rs5.executeSql(sql5);
 								basebean.writeLog("===================查询法定节假日的日期: "+ sql5);
 								while(rs5.next()){
 									if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 										basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-										dutydateD="error";
+										dutydateD="";
 										break;
 									}
 								}
-								if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+								if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 									basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 									break;
 								}
 							}
-							
 						}else{
-							sqlD = "select dutydate from hrqw_dutydata " +
-									" where pemn='"+pemn+"' and dutydate>'"+date+"' and JBID='D' and defitem2='N'" +
-									" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
-									" order by dutydate";
-							rsD.executeSql(sqlD);
-							basebean.writeLog("===================向后找D的sqlD: "+ sqlD);
-							
-							if(rsD.getCounts()>0){//向后找D的结果集有值	
-								basebean.writeLog("===================向后找D的结果集有值");
-								//rsD.previous();//移动到上一条记录，重头开始遍历
-								while(rsD.next()){
-									dutydateD = rsD.getString(1);
-									String sql5 = "select holidaydate from hrqw_fixholiday "
-											+ " where substr(holidaydate,0,4)>=to_char(add_months(trunc(sysdate),-12),'yyyy')";
-									rs5.executeSql(sql5);
-									basebean.writeLog("===================查询法定节假日的日期: "+ sql5);
-									while(rs5.next()){
-										if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
-											basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-											dutydateD="error";
-											break;
-										}
-									}
-									if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
-										basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
-										break;
-									}
-								}
-							}else{
-								dutydateD="error";
-							}
-						}
-								if(hours==12){//请假一整天
-									if(!dutydateD.equals("error")){
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"', JBID=null where pemn='"+pemn+"' and dutydate='"+dutydateD+"' ";
-										rs.executeSql(sql);
-										basebean.writeLog("===================7班别去D的sql: "+ sql);
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"', JBID='R' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-										rs.executeSql(sql);
-										basebean.writeLog("===================7班把请假当天改R的sql: "+ sql);
-									}else{
-										if(sjlasthours+4-hours>=0){//事假充足
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='2',JBID='V',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-											rs.executeSql(sql);
-											basebean.writeLog("===================7班别请事假的sql: "+ sql);
-										}else{
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='2',JBID='W',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-											rs.executeSql(sql);
-											basebean.writeLog("===================7班别请病假的sql: "+ sql);
-										}
-									}
-								}else{	//请假不是一整天的
-									if(!dutydateD.equals("error")){
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null where pemn='"+pemn+"' and dutydate='"+dutydateD+"' ";
-										rs.executeSql(sql);
-										basebean.writeLog("===================7班别去D的sql: "+ sql);
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='6',JBID='D',overtimehours="+(12-hours)+",overtimeflag='X'" +
-												" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-										rs.executeSql(sql);
-										basebean.writeLog("===================7班改成D的加班处理sql: "+ sql);
-									}else{
-										if(sjlasthours+4-hours>=0){//事假充足
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='2',JBID='V',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-											rs.executeSql(sql);
-											basebean.writeLog("===================7班别请事假的sql: "+ sql);
-										}else{
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='2',JBID='W',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-											rs.executeSql(sql);
-											basebean.writeLog("===================7班别请病假的sql: "+ sql);
-										}
-									}
-								}
+							dutydateD="error";
 						}
 					}
-				}				
-			}	
+						
+						if(hours==12){//请假一整天
+							if(!dutydateD.equals("error")){
+								sql = "update hrqw_dutydata set JBID=null where pemn="+pemn+" and dutydate='"+dutydateD+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================7班别去D的sql: "+ sql);
+								sql = "update hrqw_dutydata set JBID='R' where pemn="+pemn+" and dutydate='"+date+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================7班把请假当天改R的sql: "+ sql);
+							}else{
+								if(sjlasthours+4-hours>=0){//事假充足
+									sql = "update hrqw_dutydata set shiftid='2',JBID='V',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+									rs.executeSql(sql);
+									basebean.writeLog("===================7班别请事假的sql: "+ sql);
+								}else{
+									sql = "update hrqw_dutydata set shiftid='2',JBID='W',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+									rs.executeSql(sql);
+									basebean.writeLog("===================7班别请病假的sql: "+ sql);
+								}
+							}
+						}else{	//请假不是一整天的
+							if(!dutydateD.equals("error")){
+								sql = "update hrqw_dutydata set JBID=null where pemn="+pemn+" and dutydate='"+dutydateD+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================7班别去D的sql: "+ sql);
+								sql = "update hrqw_dutydata set shiftid='6',JBID='D',overtimehours="+(12-hours)+",overtimeflag='X'" +
+										" where pemn="+pemn+" and dutydate='"+date+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================7班改成D的加班处理sql: "+ sql);
+							}else{
+								if(sjlasthours+4-hours>=0){//事假充足
+									sql = "update hrqw_dutydata set shiftid='2',JBID='V',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+									rs.executeSql(sql);
+									basebean.writeLog("===================7班别请事假的sql: "+ sql);
+								}else{
+									sql = "update hrqw_dutydata set shiftid='2',JBID='W',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+									rs.executeSql(sql);
+									basebean.writeLog("===================7班别请病假的sql: "+ sql);
+								}
+							}
+						}
+					}
+				}					
+			}
 				}	
 				
 		}else if (shiftid.equals("8")){	//8班别
-			//TODO 判断请假的时间对应的是哪个日期的
-			String startTimeDate = timeForDate(startDate, startTime);//开始时间对应的日期
-			String endTimeDate = timeForDate(endDate, endTime);//结束时间对应的日期
-			basebean.writeLog("==============请假开始时间对应的日期 : 请假结束时间对应的日期  ： "+startTimeDate+" : "+ endTimeDate);
 										
 			if(!JBID.equals("R") && !JBID.equals("T") && !JBIDs.equals("T") && !JBIDs.equals("W")){
 			if(date.equals(startDate)){	//是开始日期
-//				double hourl;
+				double hourl;
 				double hours;
 				basebean.writeLog("=========当前循环日期date : "+date);
-				/*try {
+				try {
 					hourl = (Double) json.get(addDate(date, -1));	//昨天的请假时长
 				} catch (NullPointerException npe) {
 					basebean.writeLog("=========昨天的请假时长为0:"+npe);
 					hourl=0;
-				}*/
+				}
 				try {
 					hours = (Double) json.get(date);	//今天的请假时长
 				} catch (NullPointerException npe) {
@@ -438,12 +412,14 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 			if(JBIDs.equals("change")){	//免加班
 				
 				double dutyHours = 0;//一天的有效时长（包括请假和打卡的）
+				String time1 = null;//开始的时间
+				String time2 = null;//结束的时间
 				basebean.writeLog("=========startDate : endDate : "+startDate+" : "+endDate);
 				
-				/*if(hourl>0){//昨天的时长大于0
+				if(hourl>0){//昨天的时长大于0
 					double dutyHourl = 0;//一天的有效时长（包括请假和打卡的）
 					String sql2l = "select ondutydate,offdutydate,shiftid,JBID,lateflag,leaveflag " +
-							" from hrqw_dutydata where pemn='"+pemn+"' and dutydate = '"+addDate(date, -1)+"'";
+							" from hrqw_dutydata where pemn="+pemn+" and dutydate = '"+addDate(date, -1)+"'";
 					rs2.executeSql(sql2l);
 					basebean.writeLog("===================8班别查询昨天的打卡时间sql2l："+ sql2l);
 					String ondutydatel = null;
@@ -475,70 +451,73 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 					}
 					dutyHourl =datetimeDiff(time1, time2);
 					if(dutyHourl>=8){//需要去除标识
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',lateflag='',leaveflag='' where pemn='"+pemn+"' and dutydate='"+addDate(date, -1)+"' ";
+						sql = "update hrqw_dutydata set lateflag='',leaveflag='' where pemn="+pemn+" and dutydate='"+addDate(date, -1)+"' ";
 						rs.executeSql(sql);
 						basebean.writeLog("===================8班别昨天去除标识sql: "+ sql);
 					}else{//需要加标识
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',lateflag='#',leaveflag='#' where pemn='"+pemn+"' and dutydate='"+addDate(date, -1)+"' ";
+						sql = "update hrqw_dutydata set lateflag='#',leaveflag='#' where pemn="+pemn+" and dutydate='"+addDate(date, -1)+"' ";
 						rs.executeSql(sql);
 						basebean.writeLog("===================8班别昨天添加标识sql: "+ sql);
 					}
-				}*/
+				}
 				
 				if(hours>0){
-					//调用getDutyHours方法计算在职时长
-					dutyHours =getDutyHours(date,startTimeDate,endTimeDate,ondutydate,offdutydate,startTime,endTime);
-					basebean.writeLog("==================="+date+"有效在职时长 : "+dutyHours);
+						
+					//取打卡和请假时间较早的计算有效时长
+					if(!"".equals(ondutydate) && datetimeDiff(timeTran(startTime, date), timeTran(ondutydate, date))<0 ){
+						time1 = timeTran(ondutydate, date);
+					}else{
+						time1 = timeTran(startTime, date);
+					}
+					if(!"".equals(offdutydate) && datetimeDiff(timeTran(endTime, date), timeTran(offdutydate, date))>0){
+						time2 = timeTran(offdutydate, date);
+					}else{
+						time2 = timeTran(endTime, date);
+					}
+					dutyHours =datetimeDiff(time1, time2);
+					
 					if(dutyHours>=8){//需要去除标识
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',lateflag='',leaveflag='' where pemn='"+pemn+"' and dutydate='"+date+"' ";
+						sql = "update hrqw_dutydata set lateflag='',leaveflag='' where pemn="+pemn+" and dutydate='"+date+"' ";
 						rs.executeSql(sql);
 						basebean.writeLog("===================8班别去除标识sql: "+ sql);
 					}else{//需要加标识
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',lateflag='#',leaveflag='#' where pemn='"+pemn+"' and dutydate='"+date+"' ";
+						sql = "update hrqw_dutydata set lateflag='#',leaveflag='#' where pemn="+pemn+" and dutydate='"+date+"' ";
 						rs.executeSql(sql);
 						basebean.writeLog("===================8班别添加标识sql: "+ sql);
 					}
 				}
 
-			/*if(hourl>0){	//昨天的时长大于0
-				if(hourl<4){
+			if(hourl>0){	//昨天的时长大于0
+				if(hourl<=4){
 					if(JBID.equals("Z")){
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null, shiftid='5',overtimehours=overtimehours+"+(4-hourl)+",overtimeflag='X' where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
+						sql = "update hrqw_dutydata set JBID=null, shiftid='5',overtimehours=overtimehours+"+(4-hourl)+",overtimeflag='X' where pemn="+pemn+" and dutydate='"+addDate(date,-1)+"' ";
 					}else{
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',overtimehours=overtimehours+"+(4-hourl)+",overtimeflag='X' where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
-					}
-					rs.executeSql(sql);
-					basebean.writeLog("===================8班别免加班sql: "+ sql);
-				}else if(hourl == 4){
-					if(JBID.equals("Z")){
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null, shiftid='5' where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
-					}else{
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5' where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
+						sql = "update hrqw_dutydata set shiftid='5',overtimehours=overtimehours+"+(4-hourl)+",overtimeflag='X' where pemn="+pemn+" and dutydate='"+addDate(date,-1)+"' ";
 					}
 					rs.executeSql(sql);
 					basebean.writeLog("===================8班别免加班sql: "+ sql);
 				}else{
 					if(pysh+4-hourl>=0){	//去年年假充足
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='S',jbhours="+(hourl-4)+" where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
+						sql = "update hrqw_dutydata set shiftid='5',JBID='S',jbhours="+(hourl-4)+" where pemn="+pemn+" and dutydate='"+addDate(date,-1)+"' ";
 						rs.executeSql(sql);
 						basebean.writeLog("===================8班别免加班去年年休sql: "+ sql);
 					}else if(pych+4-hourl>=0){	//去年调休充足
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='C',jbhours="+(hourl-4)+" where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
+						sql = "update hrqw_dutydata set shiftid='5',JBID='C',jbhours="+(hourl-4)+" where pemn="+pemn+" and dutydate='"+addDate(date,-1)+"' ";
 						rs.executeSql(sql);
 						basebean.writeLog("===================8班别免加班去年调休sql: "+ sql);
 					}else if(pmsh+4-hourl>=0){	//年休充足
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='S',jbhours="+(hourl-4)+" where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
+						sql = "update hrqw_dutydata set shiftid='5',JBID='S',jbhours="+(hourl-4)+" where pemn="+pemn+" and dutydate='"+addDate(date,-1)+"' ";
 						rs.executeSql(sql);
 						basebean.writeLog("===================8班别免加班年休sql: "+ sql);
 					}else if(pmch+4-hourl>=0){	//调休充足
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='C',jbhours="+(hourl-4)+" where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
+						sql = "update hrqw_dutydata set shiftid='5',JBID='C',jbhours="+(hourl-4)+" where pemn="+pemn+" and dutydate='"+addDate(date,-1)+"' ";
 						rs.executeSql(sql);
 						basebean.writeLog("===================8班别免加班调休sql: "+ sql);
 					}else{	//去D处理
 						
 						RecordSetDataSource rsD = new RecordSetDataSource("HR");	
 						String sqlD = "select dutydate from hrqw_dutydata " +
-									" where pemn='"+pemn+"' and dutydate<'"+date+"' and JBID='D' and defitem2='N'" +
+									" where pemn="+pemn+" and dutydate<'"+date+"' and JBID='D' and defitem2='N'" +
 									" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
 									" order by dutydate desc";
 						rsD.executeSql(sqlD);
@@ -556,11 +535,11 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 								while(rs5.next()){
 									if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 										basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-										dutydateD="error";
+										dutydateD="";
 										break;
 									}
 								}
-								if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+								if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 									basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 									break;
 								}
@@ -568,7 +547,7 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 							
 						}else{
 							sqlD = "select dutydate from hrqw_dutydata " +
-									" where pemn='"+pemn+"' and dutydate>'"+date+"' and JBID='D' and defitem2='N'" +
+									" where pemn="+pemn+" and dutydate>'"+date+"' and JBID='D' and defitem2='N'" +
 									" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
 									" order by dutydate";
 							rsD.executeSql(sqlD);
@@ -586,11 +565,11 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 									while(rs5.next()){
 										if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 											basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-											dutydateD="error";
+											dutydateD="";
 											break;
 										}
 									}
-									if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+									if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 										basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 										break;
 									}
@@ -602,86 +581,95 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 						
 							//昨天的请假肯定不是一整天的
 							if(!dutydateD.equals("error")){
-								sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null where pemn='"+pemn+"' and dutydate='"+dutydateD+"' ";
+								sql = "update hrqw_dutydata set JBID=null where pemn="+pemn+" and dutydate='"+dutydateD+"' ";
 								rs.executeSql(sql);
 								basebean.writeLog("===================8班别去D的sql: "+ sql);
-								sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='6',JBID='D',overtimehours="+(12-hourl)+",overtimeflag='X'" +
-										" where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
+								sql = "update hrqw_dutydata set shiftid='6',JBID='D',overtimehours="+(12-hourl)+",overtimeflag='X'" +
+										" where pemn="+pemn+" and dutydate='"+addDate(date,-1)+"' ";
 								rs.executeSql(sql);
 								basebean.writeLog("===================8班改成D的加班处理sql: "+ sql);
 							}else{
 								if(sjlasthours+4-hourl>=0){//事假充足
-									sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='V',jbhours="+(hourl-4)+" where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
+									sql = "update hrqw_dutydata set shiftid='5',JBID='V',jbhours="+(hourl-4)+" where pemn="+pemn+" and dutydate='"+addDate(date,-1)+"' ";
 									rs.executeSql(sql);
 									basebean.writeLog("===================8班别前一天请事假的sql: "+ sql);
 								}else{
-									sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='W',jbhours="+(hourl-4)+" where pemn='"+pemn+"' and dutydate='"+addDate(date,-1)+"' ";
+									sql = "update hrqw_dutydata set shiftid='5',JBID='W',jbhours="+(hourl-4)+" where pemn="+pemn+" and dutydate='"+addDate(date,-1)+"' ";
 									rs.executeSql(sql);
 									basebean.writeLog("===================8班别前一天请病假的sql: "+ sql);
 								}
 							}				
 					}
 				}
-			}*/
+			}
 			if(hours>0){	//今天的时长大于0
-				
-				//TODO 请假当天是D的优先级最高
-				if(JBID.equals("D")){//请假当天是D
-					if(hours == 12){//请假一整天
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"', JBID='R' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						rs.executeSql(sql);
-						basebean.writeLog("===================8班请假当天是D改R的sql: "+ sql);
-					}else{//请假不是一整天
-						sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='6',overtimehours=overtimehours+"+(12-hours)+",overtimeflag='X'  where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						rs.executeSql(sql);
-						basebean.writeLog("===================8班请假当天是D改成6班别加班的sql: "+ sql);
-					}
-				}else{//请假当天不是D
-					if(hours<4){	
-						if(JBID.equals("Z")){
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null, shiftid='5',overtimehours=overtimehours+"+(4-hours)+",overtimeflag='X' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						}else{
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',overtimehours=overtimehours+"+(4-hours)+",overtimeflag='X' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						}
-						rs.executeSql(sql);
-						basebean.writeLog("===================8班别免加班sql: "+ sql);
-					}else if(hours  == 4 ){
-						if(JBID.equals("Z")){
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null, shiftid='5' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						}else{
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-						}
-						rs.executeSql(sql);
-						basebean.writeLog("===================8班别免加班sql: "+ sql);
+				if(hours<=4){	
+					if(JBID.equals("Z")){
+						sql = "update hrqw_dutydata set JBID=null, shiftid='5',overtimehours=overtimehours+"+(4-hourl)+",overtimeflag='X' where pemn="+pemn+" and dutydate='"+date+"' ";
 					}else{
-						if(pysh+4-hours>=0){	//去年年假充足
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='S',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-							rs.executeSql(sql);
-							basebean.writeLog("===================8班别免加班去年年休sql: "+ sql);
-						}else if(pych+4-hours>=0){	//去年调休充足
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='C',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-							rs.executeSql(sql);
-							basebean.writeLog("===================8班别免加班去年调休sql: "+ sql);
-						}else if(pmsh+4-hours>=0){	//年休充足
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='S',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-							rs.executeSql(sql);
-							basebean.writeLog("===================8班别免加班年休sql: "+ sql);
-						}else if(pmch+4-hours>=0){	//调休充足
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='C',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-							rs.executeSql(sql);
-							basebean.writeLog("===================8班别免加班调休sql: "+ sql);
-						}else{	//去D处理
+						sql = "update hrqw_dutydata set shiftid='5',overtimehours=overtimehours+"+(4-hourl)+",overtimeflag='X' where pemn="+pemn+" and dutydate='"+date+"' ";
+					}
+					rs.executeSql(sql);
+					basebean.writeLog("===================8班别免加班sql: "+ sql);
+				}else{
+					if(pysh+4-hours>=0){	//去年年假充足
+						sql = "update hrqw_dutydata set shiftid='5',JBID='S',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+						rs.executeSql(sql);
+						basebean.writeLog("===================8班别免加班去年年休sql: "+ sql);
+					}else if(pych+4-hours>=0){	//去年调休充足
+						sql = "update hrqw_dutydata set shiftid='5',JBID='C',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+						rs.executeSql(sql);
+						basebean.writeLog("===================8班别免加班去年调休sql: "+ sql);
+					}else if(pmsh+4-hours>=0){	//年休充足
+						sql = "update hrqw_dutydata set shiftid='5',JBID='S',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+						rs.executeSql(sql);
+						basebean.writeLog("===================8班别免加班年休sql: "+ sql);
+					}else if(pmch+4-hours>=0){	//调休充足
+						sql = "update hrqw_dutydata set shiftid='5',JBID='C',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+						rs.executeSql(sql);
+						basebean.writeLog("===================8班别免加班调休sql: "+ sql);
+					}else{	//去D处理
+						
+						RecordSetDataSource rsD = new RecordSetDataSource("HR");	
+						String sqlD = "select dutydate from hrqw_dutydata " +
+									" where pemn="+pemn+" and dutydate<'"+date+"' and JBID='D' and defitem2='N'" +
+									" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
+									" order by dutydate desc";
+						rsD.executeSql(sqlD);
+						basebean.writeLog("===================向前找D的sqlD: "+ sqlD);
+						String dutydateD = null;
+						if(rsD.getCounts()>0){//向前找D的结果集有值
+							basebean.writeLog("===================向前找D的结果集有值");
+//							rsD.previous();//移动到上一条记录，重头开始遍历
+							while(rsD.next()){
+								dutydateD = rsD.getString(1);
+								String sql5 = "select holidaydate from hrqw_fixholiday "
+										+ " where substr(holidaydate,0,4)>=to_char(add_months(trunc(sysdate),-12),'yyyy')";
+								rs5.executeSql(sql5);
+								basebean.writeLog("===================查询法定节假日的日期: "+ sql5);
+								while(rs5.next()){
+									if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
+										basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
+										dutydateD="";
+										break;
+									}
+								}
+								if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+									basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
+									break;
+								}
+							}
 							
-							RecordSetDataSource rsD = new RecordSetDataSource("HR");	
-							String sqlD = "select dutydate from hrqw_dutydata " +
-										" where pemn='"+pemn+"' and dutydate<'"+date+"' and JBID='D' and defitem2='N'" +
-										" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
-										" order by dutydate desc";
+						}else{
+							sqlD = "select dutydate from hrqw_dutydata " +
+									" where pemn="+pemn+" and dutydate>'"+date+"' and JBID='D' and defitem2='N'" +
+									" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
+									" order by dutydate";
 							rsD.executeSql(sqlD);
-							basebean.writeLog("===================向前找D的sqlD: "+ sqlD);
-							String dutydateD = null;
-							if(rsD.getCounts()>0){//向前找D的结果集有值
-								basebean.writeLog("===================向前找D的结果集有值");
+							basebean.writeLog("===================向后找D的sqlD: "+ sqlD);
+							
+							if(rsD.getCounts()>0){//向后找D的结果集有值
+								basebean.writeLog("===================向后找D的结果集有值");
 //								rsD.previous();//移动到上一条记录，重头开始遍历
 								while(rsD.next()){
 									dutydateD = rsD.getString(1);
@@ -692,26 +680,109 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 									while(rs5.next()){
 										if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 											basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-											dutydateD="error";
+											dutydateD="";
 											break;
 										}
 									}
-									if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+									if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 										basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 										break;
 									}
 								}
-								
 							}else{
-								sqlD = "select dutydate from hrqw_dutydata " +
-										" where pemn='"+pemn+"' and dutydate>'"+date+"' and JBID='D' and defitem2='N'" +
-										" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
-										" order by dutydate";
+								dutydateD="error";
+							}
+						}
+						
+							//今天的可能是一整天
+						if(hours==12){//请假一整天
+							if(!dutydateD.equals("error")){
+								sql = "update hrqw_dutydata set JBID=null where pemn="+pemn+" and dutydate='"+dutydateD+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================8班别去D的sql: "+ sql);
+								sql = "update hrqw_dutydata set JBID='R' where pemn="+pemn+" and dutydate='"+date+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================8班把请假当天改R的sql: "+ sql);
+							}else{
+								if(sjlasthours+4-hours>=0){//事假充足
+									sql = "update hrqw_dutydata set shiftid='5',JBID='V',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+									rs.executeSql(sql);
+									basebean.writeLog("===================8班别请事假的sql: "+ sql);
+								}else{
+									sql = "update hrqw_dutydata set shiftid='5',JBID='W',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+									rs.executeSql(sql);
+									basebean.writeLog("===================8班别请病假的sql: "+ sql);
+								}
+							}
+						}else{//时长不足一天
+							if(!dutydateD.equals("error")){
+								sql = "update hrqw_dutydata set JBID=null where pemn="+pemn+" and dutydate='"+dutydateD+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================8班别去D的sql: "+ sql);
+								sql = "update hrqw_dutydata set shiftid='6',JBID='D',overtimehours="+(12-hours)+",overtimeflag='X'" +
+										" where pemn="+pemn+" and dutydate='"+date+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================8班改成D的加班处理sql: "+ sql);
+							}else{
+								if(sjlasthours+4-hours>=0){//事假充足
+									sql = "update hrqw_dutydata set shiftid='5',JBID='V',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+									rs.executeSql(sql);
+									basebean.writeLog("===================8班别今天请事假的sql: "+ sql);
+								}else{
+									sql = "update hrqw_dutydata set shiftid='5',JBID='W',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+									rs.executeSql(sql);
+									basebean.writeLog("===================8班别今天请病假的sql: "+ sql);
+								}
+							}	
+							}
+						}
+					}
+				}
+			}
+			}else{//不是开始日的，只要判断请假时长是否是0，不是的就执行操作
+				double hours;
+				try {
+					hours = (Double) json.get(date);	//请假时长
+				} catch (NullPointerException npe) {
+					basebean.writeLog("=========请假时长为0:"+npe);
+					hours=0;
+				}
+				
+				if(JBIDs.equals("change")){	//免加班
+					
+					if(hours>0){	//今天的时长大于0
+						if(hours<=4){	
+							sql = "update hrqw_dutydata set shiftid='5',overtimehours=overtimehours+"+(4-hours)+",overtimeflag='X' where pemn="+pemn+" and dutydate='"+date+"' ";
+							rs.executeSql(sql);
+							basebean.writeLog("===================8班别免加班sql: "+ sql);
+						}else{
+							if(pysh+4-hours>=0){	//去年年假充足
+								sql = "update hrqw_dutydata set shiftid='5',JBID='S',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================8班别免加班去年年休sql: "+ sql);
+							}else if(pych+4-hours>=0){	//去年调休充足
+								sql = "update hrqw_dutydata set shiftid='5',JBID='C',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================8班别免加班去年调休sql: "+ sql);
+							}else if(pmsh+4-hours>=0){	//年休充足
+								sql = "update hrqw_dutydata set shiftid='5',JBID='S',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================8班别免加班年休sql: "+ sql);
+							}else if(pmch+4-hours>=0){	//调休充足
+								sql = "update hrqw_dutydata set shiftid='5',JBID='C',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
+								rs.executeSql(sql);
+								basebean.writeLog("===================8班别免加班调休sql: "+ sql);
+							}else{	//去D处理
+								RecordSetDataSource rsD = new RecordSetDataSource("HR");	
+								String sqlD = "select dutydate from hrqw_dutydata " +
+											" where pemn="+pemn+" and dutydate<'"+date+"' and JBID='D' and defitem2='N'" +
+											" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
+											" order by dutydate desc";
 								rsD.executeSql(sqlD);
-								basebean.writeLog("===================向后找D的sqlD: "+ sqlD);
-								
-								if(rsD.getCounts()>0){//向后找D的结果集有值
-									basebean.writeLog("===================向后找D的结果集有值");
+								basebean.writeLog("===================向前找D的sqlD: "+ sqlD);
+								String dutydateD = null;
+								if(rsD.getCounts()>0){//向前找D的结果集有值
+									basebean.writeLog("===================向前找D的结果集有值");
 //									rsD.previous();//移动到上一条记录，重头开始遍历
 									while(rsD.next()){
 										dutydateD = rsD.getString(1);
@@ -722,154 +793,26 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 										while(rs5.next()){
 											if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 												basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-												dutydateD="error";
+												dutydateD="";
 												break;
 											}
 										}
-										if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+										if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 											basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 											break;
 										}
 									}
+									
 								}else{
-									dutydateD="error";
-								}
-							}
-							
-								//今天的可能是一整天
-								if(hours==12){//请假一整天
-									if(!dutydateD.equals("error")){
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null where pemn='"+pemn+"' and dutydate='"+dutydateD+"' ";
-										rs.executeSql(sql);
-										basebean.writeLog("===================8班别去D的sql: "+ sql);
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID='R' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-										rs.executeSql(sql);
-										basebean.writeLog("===================8班把请假当天改R的sql: "+ sql);
-									}else{
-										if(sjlasthours+4-hours>=0){//事假充足
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='V',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-											rs.executeSql(sql);
-											basebean.writeLog("===================8班别请事假的sql: "+ sql);
-										}else{
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='W',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-											rs.executeSql(sql);
-											basebean.writeLog("===================8班别请病假的sql: "+ sql);
-										}
-									}
-								}else{//时长不足一天
-									if(!dutydateD.equals("error")){
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null where pemn='"+pemn+"' and dutydate='"+dutydateD+"' ";
-										rs.executeSql(sql);
-										basebean.writeLog("===================8班别去D的sql: "+ sql);
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='6',JBID='D',overtimehours="+(12-hours)+",overtimeflag='X'" +
-												" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-										rs.executeSql(sql);
-										basebean.writeLog("===================8班改成D的加班处理sql: "+ sql);
-									}else{
-										if(sjlasthours+4-hours>=0){//事假充足
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='V',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-											rs.executeSql(sql);
-											basebean.writeLog("===================8班别今天请事假的sql: "+ sql);
-										}else{
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='W',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-											rs.executeSql(sql);
-											basebean.writeLog("===================8班别今天请病假的sql: "+ sql);
-										}
-									}	
-								}
-							}
-						}
-				}
-				
-				}
-			}
-			}else{//不是开始日的，只要判断请假时长是否是0，不是的就执行操作
-				double hours;
-				double dutyHours = 0;//一天的有效时长（包括请假和打卡的）
-				try {
-					hours = (Double) json.get(date);	//请假时长
-				} catch (NullPointerException npe) {
-					basebean.writeLog("=========请假时长为0:"+npe);
-					hours=0;
-				}
-				
-				if(JBIDs.equals("change")){	//免加班
-					
-					if(hours>0){
-						//调用getDutyHours方法计算在职时长
-						dutyHours =getDutyHours(date,startTimeDate,endTimeDate,ondutydate,offdutydate,startTime,endTime);
-						basebean.writeLog("==================="+date+"有效在职时长 : "+dutyHours);
-						if(dutyHours>=8){//需要去除标识
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',lateflag='',leaveflag='' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-							rs.executeSql(sql);
-							basebean.writeLog("===================8班别去除标识sql: "+ sql);
-						}else{//需要加标识
-							sql = "update hrqw_dutydata set defitem5 ='"+billno+"',lateflag='#',leaveflag='#' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-							rs.executeSql(sql);
-							basebean.writeLog("===================8班别添加标识sql: "+ sql);
-						}
-					}
-					
-					if(hours>0){	//今天的时长大于0
-						//TODO 去除迟到早退标识
-						
-						
-						//TODO 请假当天是D的优先级最高
-						if(JBID.equals("D")){//请假当天是D
-							if(hours == 12){//请假一整天
-								sql = "update hrqw_dutydata set defitem5 ='"+billno+"', JBID='R' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-								rs.executeSql(sql);
-								basebean.writeLog("===================8班请假当天是D改R的sql: "+ sql);
-							}else{//请假不是一整天
-								sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='6',jbhours="+(12-hours)+"  where pemn='"+pemn+"' and dutydate='"+date+"' ";
-								rs.executeSql(sql);
-								basebean.writeLog("===================8班请假当天是D改成6班别加班的sql: "+ sql);
-							}
-						}else{//请假当天不是D
-							if(hours<4){
-								if(JBID.equals("Z")){
-									sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null, shiftid='5',overtimehours=overtimehours+"+(4-hours)+",overtimeflag='X' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-								}else{
-									sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',overtimehours=overtimehours+"+(4-hours)+",overtimeflag='X' where pemn='"+pemn+"' and dutydate='"+date+"' ";
-								}
-								rs.executeSql(sql);
-								basebean.writeLog("===================8班别免加班sql: "+ sql);
-							}else if(hours == 4){
-								if(JBID.equals("Z")){
-									sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null, shiftid='5'  where pemn='"+pemn+"' and dutydate='"+date+"' ";
-								}else{
-									sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5'  where pemn='"+pemn+"' and dutydate='"+date+"' ";
-								}
-								rs.executeSql(sql);
-								basebean.writeLog("===================8班别免加班sql: "+ sql);
-							}else{
-								if(pysh+4-hours>=0){	//去年年假充足
-									sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='S',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-									rs.executeSql(sql);
-									basebean.writeLog("===================8班别免加班去年年休sql: "+ sql);
-								}else if(pych+4-hours>=0){	//去年调休充足
-									sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='C',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-									rs.executeSql(sql);
-									basebean.writeLog("===================8班别免加班去年调休sql: "+ sql);
-								}else if(pmsh+4-hours>=0){	//年休充足
-									sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='S',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-									rs.executeSql(sql);
-									basebean.writeLog("===================8班别免加班年休sql: "+ sql);
-								}else if(pmch+4-hours>=0){	//调休充足
-									sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='C',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
-									rs.executeSql(sql);
-									basebean.writeLog("===================8班别免加班调休sql: "+ sql);
-								}else{	//去D处理
-									RecordSetDataSource rsD = new RecordSetDataSource("HR");	
-									String sqlD = "select dutydate from hrqw_dutydata " +
-												" where pemn='"+pemn+"' and dutydate<'"+date+"' and JBID='D' and defitem2='N'" +
-												" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
-												" order by dutydate desc";
+									sqlD = "select dutydate from hrqw_dutydata " +
+											" where pemn="+pemn+" and dutydate>'"+date+"' and JBID='D' and defitem2='N'" +
+											" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
+											" order by dutydate";
 									rsD.executeSql(sqlD);
-									basebean.writeLog("===================向前找D的sqlD: "+ sqlD);
-									String dutydateD = null;
-									if(rsD.getCounts()>0){//向前找D的结果集有值
-										basebean.writeLog("===================向前找D的结果集有值");
+									basebean.writeLog("===================向后找D的sqlD: "+ sqlD);
+									
+									if(rsD.getCounts()>0){//向后找D的结果集有值
+										basebean.writeLog("===================向后找D的结果集有值");
 //										rsD.previous();//移动到上一条记录，重头开始遍历
 										while(rsD.next()){
 											dutydateD = rsD.getString(1);
@@ -880,97 +823,66 @@ public class IntoLeaveTimeAction extends BaseBean implements Action {
 											while(rs5.next()){
 												if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
 													basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-													dutydateD="error";
+													dutydateD="";
 													break;
 												}
 											}
-											if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
+											if(!"".equals(dutydateD)){//如果dutydateD有值，则就取这个
 												basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
 												break;
 											}
 										}
-										
 									}else{
-										sqlD = "select dutydate from hrqw_dutydata " +
-												" where pemn='"+pemn+"' and dutydate>'"+date+"' and JBID='D' and defitem2='N'" +
-												" and (shiftid='7' or shiftid='8') and overtimehours=0 and jbhours=0"+
-												" order by dutydate";
-										rsD.executeSql(sqlD);
-										basebean.writeLog("===================向后找D的sqlD: "+ sqlD);
-										
-										if(rsD.getCounts()>0){//向后找D的结果集有值
-											basebean.writeLog("===================向后找D的结果集有值");
-//											rsD.previous();//移动到上一条记录，重头开始遍历
-											while(rsD.next()){
-												dutydateD = rsD.getString(1);
-												String sql5 = "select holidaydate from hrqw_fixholiday "
-														+ " where substr(holidaydate,0,4)>=to_char(add_months(trunc(sysdate),-12),'yyyy')";
-												rs5.executeSql(sql5);
-												basebean.writeLog("===================查询法定节假日的日期: "+ sql5);
-												while(rs5.next()){
-													if(dutydateD.equals(rs5.getString(1))){//如果D的日期是法定节假日，则置为空
-														basebean.writeLog("===================JBID为D的日期"+dutydateD+"为法定节假日");
-														dutydateD="error";
-														break;
-													}
-												}
-												if(!"error".equals(dutydateD) && !"".equals(dutydateD)){//如果dutydateD有值，则就取这个
-													basebean.writeLog("===================JBID为D的日期"+dutydateD+"可去除");
-													break;
-												}
-											}
-										}else{
-											dutydateD="error";
-										}
-									}								
-										
+										dutydateD="error";
+									}
+								}
+								
+									
 								if(hours==12){//请假一整天
 									if(!dutydateD.equals("error")){
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null where pemn='"+pemn+"' and dutydate='"+dutydateD+"' ";
+										sql = "update hrqw_dutydata set JBID=null where pemn="+pemn+" and dutydate='"+dutydateD+"' ";
 										rs.executeSql(sql);
 										basebean.writeLog("===================8班别去D的sql: "+ sql);
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID='R' where pemn='"+pemn+"' and dutydate='"+date+"' ";
+										sql = "update hrqw_dutydata set JBID='R' where pemn="+pemn+" and dutydate='"+date+"' ";
 										rs.executeSql(sql);
 										basebean.writeLog("===================8班把请假当天改R的sql: "+ sql);
 									}else{
 										if(sjlasthours+4-hours>=0){//事假充足
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='V',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
+											sql = "update hrqw_dutydata set shiftid='5',JBID='V',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
 											rs.executeSql(sql);
 											basebean.writeLog("===================8班别请事假的sql: "+ sql);
 										}else{
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='W',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
+											sql = "update hrqw_dutydata set shiftid='5',JBID='W',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
 											rs.executeSql(sql);
 											basebean.writeLog("===================8班别请病假的sql: "+ sql);
 										}
 									}
 								}else{//时长不足一天
 									if(!dutydateD.equals("error")){
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"',JBID=null where pemn='"+pemn+"' and dutydate='"+dutydateD+"' ";
+										sql = "update hrqw_dutydata set JBID=null where pemn="+pemn+" and dutydate='"+dutydateD+"' ";
 										rs.executeSql(sql);
 										basebean.writeLog("===================8班别去D的sql: "+ sql);
-										sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='6',JBID='D',overtimehours="+(12-hours)+",overtimeflag='X'" +
-												" where pemn='"+pemn+"' and dutydate='"+date+"' ";
+										sql = "update hrqw_dutydata set shiftid='6',JBID='D',overtimehours="+(12-hours)+",overtimeflag='X'" +
+												" where pemn="+pemn+" and dutydate='"+date+"' ";
 										rs.executeSql(sql);
 										basebean.writeLog("===================8班改成D的加班处理sql: "+ sql);
 									}else{
 										if(sjlasthours+4-hours>=0){//事假充足
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='V',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
+											sql = "update hrqw_dutydata set shiftid='5',JBID='V',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
 											rs.executeSql(sql);
 											basebean.writeLog("===================8班别今天请事假的sql: "+ sql);
 										}else{
-											sql = "update hrqw_dutydata set defitem5 ='"+billno+"',shiftid='5',JBID='W',jbhours="+(hours-4)+" where pemn='"+pemn+"' and dutydate='"+date+"' ";
+											sql = "update hrqw_dutydata set shiftid='5',JBID='W',jbhours="+(hours-4)+" where pemn="+pemn+" and dutydate='"+date+"' ";
 											rs.executeSql(sql);
 											basebean.writeLog("===================8班别今天请病假的sql: "+ sql);
 										}
 													}	
-												}																
+												}
+											}
 										}
 									}
 								}
-						
-							}
-						}
-					}	
+							}	
 					}//
 						}			
 					}//循环的结尾
@@ -995,14 +907,14 @@ public JSONObject diffDay(String pemn ,String startDate, String startTime, Strin
 		//班别
 		String sql1 = "select (case when shiftid is null then '-1' else shiftid end ),dutydate " +
 					" from hrqw_dutydata " +
-					" where pemn='"+pemn+"' and dutydate between '"+addDate(startDate,-1)+"' and '"+endDate+"'";
+					" where pemn="+pemn+" and dutydate between '"+addDate(startDate,-1)+"' and '"+endDate+"'";
 		
 		ds1.executeSql(sql1);		
 		basebean.writeLog("===================sql1："+ sql1);
 		//假别
 		String sql2 = "select (case when JBID is null then '-1' else JBID end ) " +
 				" from hrqw_dutydata " +
-				" where pemn='"+pemn+"' and dutydate between '"+addDate(startDate,-1)+"' and '"+endDate+"'";
+				" where pemn="+pemn+" and dutydate between '"+addDate(startDate,-1)+"' and '"+endDate+"'";
 		
 		ds2.executeSql(sql2);
 		basebean.writeLog("===================sql2："+ sql2);
@@ -1489,23 +1401,22 @@ public JSONObject diffDay(String pemn ,String startDate, String startTime, Strin
 	//计算日期时间差值
 	public double datetimeDiff(String startTime, String endTime){
 		basebean.writeLog("===================startTime , endTime  "+ startTime+" , "+endTime);
+		SimpleDateFormat   df   =   new   SimpleDateFormat("yyyy-MM-dd HH:mm"); 
 		double hour = 0;
-        if(!"".equals(startTime) && !"".equals(endTime)) {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-            try {
-                Date begin = df.parse(startTime);
-                Date end = df.parse(endTime);
-                System.out.println("===================begin:  end" + begin + " : " + end);
-                System.out.println("===================begin:  end.gettime" + begin.getTime() + " : " + end.getTime());
-                double between = (end.getTime() - begin.getTime()) / 1000;//除以1000是为了转换成秒
-                System.out.println("===================between：" + between);
-                hour = between / 3600;
-            } catch (Exception e) {
-            }
-        }
-        basebean.writeLog("===================日期时间差值结果hour："+ hour);
-
-        return hour;
+		try{
+		  Date   begin=df.parse(startTime);   
+		  Date   end   =   df.parse(endTime);
+		  System.out.println("===================begin:  end"+ begin+" : "+end);
+		  System.out.println("===================begin:  end.gettime"+ begin.getTime()+" : "+end.getTime());
+		  double   between=(end.getTime()-begin.getTime())/1000;//除以1000是为了转换成秒   
+		  System.out.println("===================between："+ between);
+		  hour=between/3600;   
+		}catch (Exception e)   
+		{   
+		}
+		basebean.writeLog("===================日期时间差值结果hour："+ hour);
+		
+		return hour;
 	}
 	
 	//计算时间差值
@@ -1604,7 +1515,7 @@ public JSONObject diffDay(String pemn ,String startDate, String startTime, Strin
 	//跨天的日期转换
 	public String timeTran(String time, String date){
 		String dateTime;
-		if(timeCompare("08:00", time)>0){
+		if(timeCompare("12:00", time)>0){
 			dateTime = date+" "+time;			
 		}else{
 			dateTime = addDate(date, 1)+" "+time;
@@ -1619,10 +1530,10 @@ public JSONObject diffDay(String pemn ,String startDate, String startTime, Strin
 				+ " then 0 "
 				+ " else (nvl(a.pysh,0)-nvl(b.jbhours,0))"
 				+ " end) as hours"
-				+ " from (select pemn,pysh from hrqw_empinfo where pemn='"+pemn+"') a "
+				+ " from (select pemn,pysh from hrqw_empinfo where pemn="+pemn+") a "
 				+ " left join (select pemn,sum(case when jbhours=0 then 8 else jbhours end) as jbhours "
 				+ " from hrqw_dutydata"
-				+ " where pemn='"+pemn+"' and defitem2 = 'N' and JBID='S' and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm')  "
+				+ " where pemn="+pemn+" and defitem2 = 'N' and JBID='S' and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm')  "
 				+ " and substr(dutydate,6,5) between '01-01' and '03-31'"
 				+ " group by pemn) b "
 				+ " on a.pemn=b.pemn  ) as pysh, "
@@ -1630,99 +1541,46 @@ public JSONObject diffDay(String pemn ,String startDate, String startTime, Strin
 				+ " then 0 "
 				+ " else (nvl(a.pych,0)-nvl(b.jbhours,0)+nvl(c.overtimehours,0))"
 				+ " end) as hours"
-				+ " from (select pemn,pych from hrqw_empinfo where pemn='"+pemn+"') a "
+				+ " from (select pemn,pych from hrqw_empinfo where pemn="+pemn+") a "
 				+ " left join (select pemn,sum(case when jbhours=0 then 8 else jbhours end) as jbhours      "
 				+ " from hrqw_dutydata "
-				+ " where pemn='"+pemn+"' and defitem2 = 'N' and JBID='C' and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm') "
+				+ " where pemn="+pemn+" and defitem2 = 'N' and JBID='C' and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm') "
 				+ " and substr(dutydate,6,5) between '01-01' and '03-31'"
 				+ " group by pemn) b "
 				+ " on a.pemn=b.pemn "
 				+ " left join (select pemn,sum(overtimehours) as overtimehours    "
 				+ " from hrqw_dutydata "
-				+ " where pemn='"+pemn+"' and overtimeflag is null and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm')"
+				+ " where pemn="+pemn+" and overtimeflag is null and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm')"
 				+ " group by pemn) c"
 				+ " on a.pemn=c.pemn  ) as pych,				"
 				+ " (select nvl(a.pmsh,0)-nvl(b.jbhours,0) as hours"
-				+ " from (select pemn,pmsh from hrqw_empinfo where pemn='"+pemn+"') a "
+				+ " from (select pemn,pmsh from hrqw_empinfo where pemn="+pemn+") a "
 				+ " left join (select pemn,sum(case when jbhours=0 then 8 else jbhours end) as jbhours "
 				+ " from hrqw_dutydata"
-				+ " where pemn='"+pemn+"' and defitem2 = 'N' and JBID='S' and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm')"
+				+ " where pemn="+pemn+" and defitem2 = 'N' and JBID='S' and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm')"
 				+ " group by pemn) b "
 				+ " on a.pemn=b.pemn) as pmsh,				"
 				+ " (select nvl(a.pmch,0)-nvl(b.jbhours,0)+nvl(c.overtimehours,0) as hours"
-				+ " from (select pemn,pmch from hrqw_empinfo where pemn='"+pemn+"') a "
+				+ " from (select pemn,pmch from hrqw_empinfo where pemn="+pemn+") a "
 				+ " left join (select pemn,sum(case when jbhours=0 then 8 else jbhours end) as jbhours      "
 				+ " from hrqw_dutydata "
-				+ " where pemn='"+pemn+"' and defitem2 = 'N' and JBID='C' and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm')"
+				+ " where pemn="+pemn+" and defitem2 = 'N' and JBID='C' and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm')"
 				+ " group by pemn) b "
 				+ " on a.pemn=b.pemn "
 				+ " left join (select pemn,sum(overtimehours) as overtimehours    "
 				+ " from hrqw_dutydata "
-				+ " where pemn='"+pemn+"' and overtimeflag is null and defitem2 = 'N'and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm')"
+				+ " where pemn="+pemn+" and overtimeflag is null and defitem2 = 'N'and substr(dutydate,0,7)>=to_char(add_months(trunc(sysdate),-2),'yyyy-mm')"
 				+ " group by pemn) c"
 				+ " on a.pemn=c.pemn ) as pmch,			"
 				+ " (select a.sjlasthours-nvl(b.jbhours,0) as hours"
-				+ " from (select pemn,sjlasthours from hrqw_empinfo where pemn='"+pemn+"') a "
+				+ " from (select pemn,sjlasthours from hrqw_empinfo where pemn="+pemn+") a "
 				+ " left join (select pemn,sum(case when jbhours=0 then 8 else jbhours end) as jbhours "
 				+ " from hrqw_dutydata"
-				+ " where pemn='"+pemn+"' and defitem2 = 'N' and JBID='V' "
+				+ " where pemn="+pemn+" and defitem2 = 'N' and JBID='V' "
 				+ " group by pemn) b "
 				+ " on a.pemn=b.pemn) as sjlasthours"
 				+ " from dual";
 		return sql;
 	}
 
-	//根据8班别请假的时间和日期，判断请假时间属于哪个日期
-	public String timeForDate(String date, String time){
-		String timeDate = "";
-		if(timeCompare("08:00", time) > 0){//大于8点的就是今天的日期
-			timeDate = date;
-		}else{//在8点前的就是昨天的日期
-			timeDate = addDate(date, -1);
-		}
-		return timeDate;
-	}
-	
-	public double getDutyHours(String date, String startTimeDate, String endTimeDate, String ondutydate, String offdutydate, String startTime, String endTime){
-        String time1;
-        String time2;
-        double dutyHours;
-        if(date.equals(startTimeDate)){
-            //取打卡和请假时间较早的计算有效时长
-            if(!"".equals(ondutydate) && datetimeDiff(timeTran(startTime, date), timeTran(ondutydate, date))<0 ){
-                time1 = timeTran(ondutydate, date);
-            }else{
-                time1 = timeTran(startTime, date);
-            }
-        }else{
-            if (dayDiff(date, startTimeDate)<0){
-                time1 = timeTran("20:00", date);
-            }else {
-                if (!"".equals(ondutydate))
-                    time1 = timeTran(ondutydate, date);
-                else
-                    time1 = null;
-            }
-        }
-        if (date.equals(endTimeDate)){
-            if(!"".equals(offdutydate) && datetimeDiff(timeTran(endTime, date), timeTran(offdutydate, date))>0){
-                time2 = timeTran(offdutydate, date);
-            }else{
-                time2 = timeTran(endTime, date);
-            }
-        }else {
-            if(dayDiff(date, endTimeDate)>0){//结束日期在今天之后，那就拿正常下班时间
-                time2 = timeTran("08:00", date);
-            }else{
-                if (!"".equals(offdutydate))
-                    time2 = timeTran(offdutydate, date);
-                else
-                    time2 = null;
-            }
-        }
-		basebean.writeLog("===================计算有效在职时长的 time1 : time2 : "+ time1 +" : "+time2);
-        dutyHours = datetimeDiff(time1, time2);
-
-        return dutyHours;
-    }
 }

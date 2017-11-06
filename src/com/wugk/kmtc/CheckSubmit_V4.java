@@ -10,7 +10,7 @@ import net.sf.json.JSONObject;
 import weaver.conn.RecordSetDataSource;
 import weaver.general.BaseBean;
  
-public class CheckSubmit {
+public class CheckSubmit_V4 {
 	BaseBean basebean = new BaseBean();
 	//计算请假时间
 	public String check(String pemn ,String startDate, String startTime, String endDate, String endTime){				
@@ -38,7 +38,7 @@ public class CheckSubmit {
 			//提交不能跨班别
 			String sql1 = "select count(distinct shiftid) " +
 					" from hrqw_dutydata " +
-					" where pemn='"+pemn+"' and dutydate between '"+startDate+"' and '"+endDate+"'";
+					" where pemn="+pemn+" and dutydate between '"+startDate+"' and '"+endDate+"'";
 		
 		ds1.executeSql(sql1);		
 		basebean.writeLog("===================提交不能跨班别sql1："+ sql1);
@@ -54,7 +54,7 @@ public class CheckSubmit {
 		//开始到结束日期间班别和假别
 		sql1 = "select (case when shiftid is null then '-1' else shiftid end ),(case when JBID is null then '-1' else JBID end ) " +
 					" from hrqw_dutydata " +
-					" where pemn='"+pemn+"' and dutydate between '"+startDate+"' and '"+endDate+"'";
+					" where pemn="+pemn+" and dutydate between '"+startDate+"' and '"+endDate+"'";
 		
 		ds1.executeSql(sql1);		
 		basebean.writeLog("===================sql1："+ sql1);
@@ -86,7 +86,7 @@ public class CheckSubmit {
 			
 			String sql3 = "select (case when shiftid is null then '-1' else shiftid end ), ondutydate,offdutydate,(case when JBID is null then '-1' else JBID end ) " +
 					" from hrqw_dutydata " +
-					" where pemn='"+pemn+"' and dutydate = '"+startDate1+"'";
+					" where pemn="+pemn+" and dutydate = '"+startDate1+"'";
 			
 			ds3.executeSql(sql3);		
 			basebean.writeLog("===================sql3："+ sql3);
@@ -134,7 +134,7 @@ public class CheckSubmit {
 			//打卡时间信息
 			String sql3 = "select (case when shiftid is null then '-1' else shiftid end ), ondutydate,offdutydate,(case when JBID is null then '-1' else JBID end ) " +
 					" from hrqw_dutydata " +
-					" where pemn='"+pemn+"' and dutydate = '"+startDate+"'";
+					" where pemn="+pemn+" and dutydate = '"+startDate+"'";
 			
 			ds3.executeSql(sql3);		
 			basebean.writeLog("===================sql3："+ sql3);
@@ -172,7 +172,7 @@ public class CheckSubmit {
 			
 			String sql3 = "select (case when shiftid is null then '-1' else shiftid end ), ondutydate,offdutydate,(case when JBID is null then '-1' else JBID end ) " +
 					" from hrqw_dutydata " +
-					" where pemn='"+pemn+"' and dutydate = '"+endDate1+"'";
+					" where pemn="+pemn+" and dutydate = '"+endDate1+"'";
 			
 			ds3.executeSql(sql3);		
 			basebean.writeLog("===================sql3："+ sql3);
@@ -200,7 +200,7 @@ public class CheckSubmit {
 		}else if(shiftids.get(i).equals("8") && timeCompare("20:00",endTime)>0){//需要判断结束日期对应的打卡时间不为空
 			String sql3 = "select (case when shiftid is null then '-1' else shiftid end ), ondutydate,offdutydate,(case when JBID is null then '-1' else JBID end ) " +
 					" from hrqw_dutydata " +
-					" where pemn='"+pemn+"' and dutydate = '"+endDate+"'";
+					" where pemn="+pemn+" and dutydate = '"+endDate+"'";
 			
 			ds3.executeSql(sql3);		
 			basebean.writeLog("===================sql3："+ sql3);
@@ -242,7 +242,7 @@ public class CheckSubmit {
 			//打卡时间信息
 			String sql3 = "select (case when shiftid is null then '-1' else shiftid end ), ondutydate,offdutydate,(case when JBID is null then '-1' else JBID end ) " +
 					" from hrqw_dutydata " +
-					" where pemn='"+pemn+"' and dutydate = '"+endDate+"'";
+					" where pemn="+pemn+" and dutydate = '"+endDate+"'";
 			
 			ds3.executeSql(sql3);		
 			basebean.writeLog("===================sql3："+ sql3);
